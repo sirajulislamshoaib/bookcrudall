@@ -1,0 +1,152 @@
+[USP_INSERT_BOOK] 'My Title','C',100,1,NULL,NULL,NULL
+SELECT * FROM Book
+
+ALTER PROC [dbo].[GET_BOOK_SUMMAR](
+@TYPE VARCHAR(10)='C'
+)
+AS
+BEGIN
+
+IF @TYPE='A'
+	BEGIN
+		SELECT B.Author,COUNT(*) TotalBook
+		FROM Book B
+		INNER JOIN Category C ON C.Id=B.CategoryId
+		WHERE B.IsActive=1
+		GROUP BY B.Author--,B.Title
+
+	END
+ELSE
+	BEGIN
+		SELECT C.Name,COUNT(*) TotalBook
+		FROM Book B
+		INNER JOIN Category C ON C.Id=B.CategoryId
+		WHERE B.IsActive=1
+		GROUP BY C.name--,B.Title
+	END
+
+END
+
+
+CREATE PROC [dbo].[USP_INSERT_BOOK]
+(
+    @Title VARCHAR(200), 
+    @Author VARCHAR(200), 
+    @Page INT, 
+    @CategoryId INT, 
+    @CoverPhoto VARCHAR(500),
+    @PdfBook VARCHAR(500),
+    @PublishDate VARCHAR(50)
+)
+AS
+BEGIN
+    INSERT INTO BOOK 
+    (Title, Author, [Page], CategoryId, CoverPhoto, PdfBook, PublishDate)
+    VALUES 
+    (@Title, @Author, @Page, @CategoryId, @CoverPhoto, @PdfBook, CONVERT(DATE, @PublishDate, 105))
+END
+
+
+CREATE PROC [dbo].[USP_UPDATE_BOOK]
+(
+@Id INT,
+@Title VARCHAR(200), 
+@Author VARCHAR(200), 
+@Page INT, 
+@CategoryId INT, 
+@CoverPhoto VARCHAR(500),
+@PdfBook VARCHAR(500),
+@PublishDate VARCHAR(50)
+)
+AS
+BEGIN
+	UPDATE BOOK 
+	SET Title=@Title,
+		Author=@Author, 
+		[Page]=@Page, 
+		CategoryId=@CategoryId,
+		CoverPhoto=@CoverPhoto,
+		PdfBook=@PdfBook,
+		PublishDate=CONVERT(DATE,@PublishDate,105)
+	WHERE Id=@Id
+END
+
+
+ALTER PROC [dbo].[USP_GET_BOOK_LIST]
+(
+@Author VARCHAR(200)='',
+ @Title VARCHAR(200)='',
+@FromDate VARCHAR(200)='2024-11-26',
+@ToDate VARCHAR(200)='',
+@CategoryId INT=0
+)
+AS
+BEGIN
+
+SELECT B.Id,
+	   B.Title,
+	   B.Author,
+	   ISNULL(B.CategoryId,0) CategoryId,
+	   C.Name CategoryName,
+	   B.Page,
+	  ISNULL(B.CoverPhoto,'') CoverPhoto,
+	   ISNULL(B.PdfBook,'') PdfBook,
+	   ISNULL(CAST(B.PublishDate AS VARCHAR(100)),'') PublishDate,
+	   B.IsActive
+	FROM Book B 
+	INNER JOIN [dbo].[Category] C ON C.Id=B.CategoryId
+	WHERE (@CategoryId=0 OR B.CategoryId=@CategoryId)
+	AND (@Author='' OR B.Author LIKE'%'+@Author+'%' )
+	AND (@Title='' OR B.Title LIKE '%'+@Title+'%')
+	AND(@FromDate='' OR B.PublishDate>=CONVERT(DATE,@FromDate))
+	AND(@ToDate='' OR B.PublishDate<=CONVERT(DATE,@ToDate))
+
+END
+
+
+ALTER PROC [dbo].[USP_GET_BOOK_LIST]
+(
+@Author VARCHAR(200)='',
+ @Title VARCHAR(200)='',
+@FromDate VARCHAR(200)='',
+@ToDate VARCHAR(200)='',
+@CategoryId INT=0
+)
+AS
+BEGIN
+
+SELECT B.Id,
+	   B.Title,
+	   B.Author,
+	   ISNULL(B.CategoryId,0) CategoryId,
+	   C.Name CategoryName,
+	   B.Page,
+	  ISNULL(B.CoverPhoto,'') CoverPhoto,
+	   ISNULL(B.PdfBook,'') PdfBook,
+	   ISNULL(B.PublishDate,'') PublishDate,
+	   B.IsActive
+	FROM Book B 
+	INNER JOIN [dbo].[Category] C ON C.Id=B.CategoryId
+	WHERE (@CategoryId=0 OR B.CategoryId=@CategoryId)
+	AND (@Author='' OR B.Author LIKE'%'+@Author+'%' )
+	AND (@Title='' OR B.Title LIKE '%'+@Title+'%')
+	AND(@FromDate='' OR B.PublishDate>=CONVERT(DATE,@FromDate,105))
+	AND(@ToDate='' OR B.PublishDate<=CONVERT(DATE,@ToDate,105))
+
+END
+
+
+
+
+ALTER PROC [dbo].[USP_GET_SINGLE_BOOK]
+(
+@Id INT=17
+)
+AS
+BEGIN
+
+SELECT Id,Title,Author,CategoryId,ISNULL(CoverPhoto,'') CoverPhoto,Page ,IsActive,ISNULL(PdfBook,'') PdfBook,FORMAT(PublishDate,'yyyy-MM-dd') PublishDate
+FROM Book Where Id=@Id AND IsActive=1
+END
+
+
